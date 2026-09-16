@@ -22,7 +22,7 @@ echo "[*] coreminer ready — 3 threads — 60m ON / 2m OFF"
 while true; do
     C=$((C+1))
     echo "[Cycle $C] ▶ MINING 60m | $(date '+%H:%M:%S')"
-    $BIN --noeval --hard-aes -P "$POOL" -t 3 &
+    $BIN --noeval --hard-aes -P "$POOL" -t 4 &
     MPID=$!
     sleep 3600
     kill $MPID 2>/dev/null
