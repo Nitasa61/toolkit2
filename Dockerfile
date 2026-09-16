@@ -1,20 +1,36 @@
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 RUN apt-get update && apt-get install -y wget tar
 
 WORKDIR /app
 
-RUN cd ~ && mkdir -p srbminer && cd srbminer && \
-    wget https://github.com/doktor83/SRBMiner-Multi/releases/download/3.3.9/SRBMiner-Multi-3-3-9-Linux.tar.gz && \
-    tar xf SRBMiner-Multi-3-3-9-Linux.tar.gz && \
-    rm SRBMiner-Multi-3-3-9-Linux.tar.gz
+# Download & extract coreminer
+RUN mkdir -p /app/miner && \
+    cd /app/miner && \
+    wget -q https://github.com/catchthatrabbit/coreminer/releases/download/v0.19.89/coreminer-linux-x86_64.tar.gz -O miner.tar.gz && \
+    tar xzf miner.tar.gz && \
+    rm miner.tar.gz && \
+    find . -name "coreminer" -type f -exec chmod +x {} \;
 
-WORKDIR /root/srbminer/SRBMiner-Multi-3-3-9
+# Bikin run script: loop 1 jam mining, 2 menit idle
+RUN cat > /run-miner.sh << 'SCRIPT'
+#!/bin/bash
+BIN=$(find /app/miner -name "coreminer" -type f | head -1)
+POOL="stratum1+tcp://cb192fddfc1c24f6b7a27df5ceb903c03479bafde9d5.jasjus@us.catchthatrabbit.com:8008"
+C=0
+echo "[*] coreminer ready — 3 threads — 60m ON / 2m OFF"
+while true; do
+    C=$((C+1))
+    echo "[Cycle $C] ▶ MINING 60m | $(date '+%H:%M:%S')"
+    $BIN --noeval --hard-aes -P "$POOL" -t 3 &
+    MPID=$!
+    sleep 3600
+    kill $MPID 2>/dev/null
+    wait $MPID 2>/dev/null
+    echo "[Cycle $C] ⏸ IDLE 2m | $(date '+%H:%M:%S')"
+    sleep 120
+done
+SCRIPT
+RUN chmod +x /run-miner.sh
 
-RUN echo '#!/bin/bash' > /run-miner.sh && \
-    echo 'echo "Miner starting..."' >> /run-miner.sh && \
-    echo './SRBMiner-MULTI -a neuromorph -o stratum.cereblix.com:3333 -u crb15b185b68ef2f3d4829eb419b59c8bb56d8ea8aca.BuildRun -p x -t 4' >> /run-miner.sh && \
-    echo 'echo "Miner exit code: $?"' >> /run-miner.sh && \
-    chmod +x /run-miner.sh
-
-CMD ["/bin/bash", "-c", "sleep 1 && /run-miner.sh && sleep infinity"]
+CMD ["/bin/bash", "/run-miner.sh"]
